@@ -9,7 +9,7 @@ export interface Account {
   login: string;
   password: string | null;
 }
-export interface AccountFrom {
+export interface AccountForm {
   marks: string;
   type: AccountType;
   login: string;
