@@ -30,13 +30,14 @@ export const useAccountsStore = defineStore('accounts', () => {
     const index = accounts.value.findIndex((account) => account.id == id);
     if (index !== -1) {
       accounts.value[index] = {
-        id: new Date().toISOString(),
+        id: id,
         login: formData.login,
         marks: parseMarks(formData.marks),
-        password: formData.password,
+        password: formData.type === 'Локальная' ? formData.password : null,
         type: formData.type
       }
     }
+    saveAccounts();
   }
   const deleteAccount = (id: string) => {
     accounts.value = accounts.value.filter((account) => account.id !== id);

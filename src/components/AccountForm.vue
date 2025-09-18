@@ -1,44 +1,63 @@
 <template>
-  <div class="form">
-    <div class="form__header">
-      <h1>Учетные записи</h1>
-      <button class="form__add-btn" @click="createAccount">+</button>
-    </div>
-    <div class="form__hint">
-      <img class="hint-icon" src="../assets/ask.svg" alt="">
-      Для указания нескольких меток, для одной пары логин/пароль, используйте разделитель
-    </div>
-    <ul class="form__labels">
-      <li>Метки</li>
-      <li>Тип записи</li>
-      <li>Логин</li>
-      <li>Пароль</li>
-    </ul>
-    <div class="form__account-wrapper">
-      <div v-for="account in localAccounts" :key="account.id" class="form__account">
-        <div>
-          <input @blur="validateFormAndSave(account)" :class="account.errors.marks && 'error'"
-            v-model="account.form.marks" type="text" name="marks" id="marks">
-          <span class="error-hint" v-if="account.errors.marks">{{ account.errors.marks }}</span>
-        </div>
-        <select @blur="validateFormAndSave(account)" v-model="account.form.type" name="type" id="type">
-          <option value="Локальная">Локальная</option>
-          <option value="LDAP">LDAP</option>
-        </select>
-        <div class="form-group">
-          <input @blur="validateFormAndSave(account)" :class="account.errors.login && 'error'"
-            v-model="account.form.login" type="text" name="login" id="login">
-          <span class="error-hint" v-if="account.errors.login">{{ account.errors.login }}</span>
-        </div>
-        <div v-if="account.form.type === 'Локальная'" class="form-group">
-          <input @blur="validateFormAndSave(account)" :class="account.errors.password && 'error'"
-            v-model="account.form.password" type="text" name="password" id="password">
-          <span class="error-hint" v-if="account.errors.password">{{ account.errors.password }}</span>
-        </div>
-        <button class="form__delete-btn" @click="deleteAccount(account.id)">X</button>
+  <v-container class="pa-6" max-width="1280">
+    <v-card class="pa-4 rounded-xl elevation-2">
+      <v-card-title class="d-flex align-center justify-space-between">
+        <span class="text-h5 font-weight-bold">Учетные записи</span>
+        <v-btn color="green" variant="flat" @click="createAccount">Добавить</v-btn>
+      </v-card-title>
+
+      <v-card-subtitle class="d-flex align-center text-caption mb-4">
+        <v-icon size="small" class="mr-2">mdi-help-circle-outline</v-icon>
+        Для указания нескольких меток, используйте разделитель <b>;</b>
+      </v-card-subtitle>
+
+      <v-row class="text-body-2 font-weight-medium mb-1">
+        <v-col cols="3">Метки</v-col>
+        <v-col cols="3">Тип записи</v-col>
+        <v-col cols="3">Логин</v-col>
+        <v-col cols="2">Пароль</v-col>
+        <v-col cols="1"></v-col>
+      </v-row>
+
+      <v-divider></v-divider>
+
+      <div class="mt-3">
+        <v-card v-for="account in localAccounts" :key="account.id" class="pa-3 mb-2" outlined>
+          <v-row dense align="center">
+            <v-col cols="3">
+              <v-text-field v-model="account.form.marks" label="Метки" density="compact" hide-details="auto"
+                variant="outlined" :error="!!account.errors.marks" :error-messages="account.errors.marks"
+                @blur="validateFormAndSave(account)" />
+            </v-col>
+
+            <v-col cols="3">
+              <v-select v-model="account.form.type" :items="['Локальная', 'LDAP']" label="Тип" density="compact"
+                hide-details variant="outlined" @update:model-value="onTypeChange(account)" />
+            </v-col>
+
+            <v-col cols="3">
+              <v-text-field v-model="account.form.login" label="Логин" density="compact" hide-details="auto"
+                variant="outlined" :error="!!account.errors.login" :error-messages="account.errors.login"
+                @blur="validateFormAndSave(account)" />
+            </v-col>
+
+            <v-col cols="2" v-if="account.form.type === 'Локальная'">
+              <v-text-field v-model="account.form.password" label="Пароль" density="compact" hide-details="auto"
+                variant="outlined" :error="!!account.errors.password" :error-messages="account.errors.password"
+                @blur="validateFormAndSave(account)" />
+            </v-col>
+
+            <v-col cols="1" class="d-flex justify-center">
+              <v-btn icon variant="text" color="red" size="small" @click="deleteAccount(account.id)">
+                <v-icon size="small">mdi-delete</v-icon>
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-card>
       </div>
-    </div>
-  </div>
+    </v-card>
+  </v-container>
+
 </template>
 
 <script setup lang="ts">
@@ -58,12 +77,13 @@ interface LocalAccount {
 }
 
 const accountStore = useAccountsStore();
-const localAccounts = ref<LocalAccount[]>([])
+const localAccounts = ref<LocalAccount[]>([]);
 
 onMounted(() => {
   loadAccounts();
-  console.log(accountStore.accounts)
-})
+  console.log(accountStore.accounts);
+});
+
 function loadAccounts() {
   localAccounts.value = accountStore.accounts.map((account) => ({
     id: account.id,
@@ -73,22 +93,18 @@ function loadAccounts() {
       login: account.login,
       password: account.password || null,
     },
-    errors: {
-      marks: '',
-      type: '',
-      login: '',
-      password: '',
-    }
-  }))
+    errors: {}
+  }));
 }
 
 function deleteAccount(id: string) {
   if (id.startsWith('new-')) {
-    localAccounts.value = localAccounts.value.filter((account) => account.id !== id)
+    localAccounts.value = localAccounts.value.filter((account) => account.id !== id);
   } else {
     accountStore.deleteAccount(id);
   }
 }
+
 function createAccount() {
   const newAccount: LocalAccount = {
     id: 'new-' + new Date().toISOString(),
@@ -98,23 +114,27 @@ function createAccount() {
       password: '',
       type: 'Локальная',
     },
-    errors: {
-      marks: '',
-      type: '',
-      login: '',
-      password: '',
-    },
-  }
+    errors: {}
+  };
   localAccounts.value.push(newAccount);
 }
+
+function onTypeChange(account: LocalAccount) {
+  if (account.form.type === 'LDAP') {
+    account.form.password = '';
+  }
+  validateFormAndSave(account);
+}
+
 function validateFormAndSave(account: LocalAccount) {
   account.errors = {};
   const { form, errors } = account;
-  if (form.marks.trim().length > 50) {
+
+  if (form.marks.trim().length >= 50) {
     errors.marks = 'Вы превысили максимальное количество символов (50)';
   }
 
-  if (form.login.trim().length > 100) {
+  if (form.login.trim().length >= 100) {
     errors.login = 'Вы превысили максимальное количество символов (100)';
   } else if (form.login.trim().length === 0) {
     errors.login = 'Заполните обязательное поле';
@@ -126,101 +146,16 @@ function validateFormAndSave(account: LocalAccount) {
 
   if (form.type == 'Локальная' && (form.password?.trim().length ?? 0) === 0) {
     errors.password = 'Заполните обязательное поле';
-  } else if (form.type == 'Локальная' && form.password && (form.password.trim().length > 100)) {
+  } else if (form.type == 'Локальная' && form.password && form.password.trim().length >= 100) {
     errors.password = 'Вы превысили максимальное количество символов (100)';
   }
 
   if (Object.keys(account.errors).length === 0) {
     if (account.id.startsWith('new-')) {
-      accountStore.addAccount(account.form)
+      accountStore.addAccount(account.form);
     } else {
-      accountStore.updateAccount(account.id, account.form)
+      accountStore.updateAccount(account.id, account.form);
     }
   }
-
 }
 </script>
-
-<style scoped>
-.form {
-  margin: 0 auto;
-  max-width: 900px;
-}
-
-.form__header {
-  display: flex;
-  align-items: end;
-  justify-content: left;
-  column-gap: 16px;
-  margin-bottom: 20px;
-  font-size: 24px;
-}
-
-.hint-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.form__account-wrapper {
-  display: flex;
-  flex-direction: column;
-  row-gap: 8px;
-}
-
-.form__add-btn {
-  padding: 2px 16px;
-  color: white;
-  background-color: green;
-  border: none;
-  border-radius: 4px;
-}
-
-.form__delete-btn {
-  border-radius: 50%;
-  background-color: red;
-  font-size: 10px;
-  padding: 2px 6px;
-  color: white;
-  border: none;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form__hint {
-  display: flex;
-  align-items: center;
-  column-gap: 8px;
-  margin-bottom: 20px;
-  font-size: 12px;
-}
-
-.form__labels {
-  width: 100%;
-  display: flex;
-  column-gap: 10px;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-
-.form__labels li {
-  flex-grow: 1;
-}
-
-.form__account {
-  display: flex;
-  column-gap: 20px;
-  align-items: start;
-}
-
-.error-hint {
-  color: red;
-  font-size: 10px;
-}
-
-.error {
-  border: 1px solid red;
-}
-</style>
