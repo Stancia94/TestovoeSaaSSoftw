@@ -17,7 +17,7 @@ export const useAccountsStore = defineStore('accounts', () => {
   }
   const addAccount = (formData: AccountForm) => {
     const newAccount: Account = {
-      id: new Date().toString(),
+      id: new Date().toISOString(),
       login: formData.login,
       type: formData.type,
       marks: parseMarks(formData.marks),
@@ -26,9 +26,22 @@ export const useAccountsStore = defineStore('accounts', () => {
     accounts.value.push(newAccount);
     saveAccounts();
   }
+  const updateAccount = (id: string, formData: AccountForm) => {
+    const index = accounts.value.findIndex((account) => account.id == id);
+    if (index !== -1) {
+      accounts.value[index] = {
+        id: new Date().toISOString(),
+        login: formData.login,
+        marks: parseMarks(formData.marks),
+        password: formData.password,
+        type: formData.type
+      }
+    }
+  }
   const deleteAccount = (id: string) => {
     accounts.value = accounts.value.filter((account) => account.id !== id);
     saveAccounts();
   }
-  return { accounts };
+  loadAccounts();
+  return { accounts, addAccount, deleteAccount, updateAccount };
 })
